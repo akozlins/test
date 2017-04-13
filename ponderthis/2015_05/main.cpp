@@ -25,51 +25,58 @@
 
 #include <algorithm>
 
+const int s_max = 253 + 254 + 255;
+
 const uint8_t t_max = 16;
 
-void sort(int& a, int& b, int& c) {
+void sort(unsigned& a, unsigned& b, unsigned& c) {
     if(a > b) std::swap(a, b);
     if(b > c) std::swap(b, c);
     if(a > b) std::swap(a, b);
 }
 
-uint8_t ts[1024][1024];
+uint8_t ts[s_max][s_max];
 
-void play(int a, int b, int c, uint8_t t = 1) {
-    if(t > 1 && (a == b || b == c || c == a)) return;
+void play(unsigned a, unsigned b, unsigned c, uint8_t t) {
+    if(t > 1 && (a == b || a == c || b == c)) return;
 
     sort(a, b, c);
-    if(0 < ts[a][b] && ts[a][b] <= t) return;
+    if(ts[a][b] <= t) return;
     ts[a][b] = t;
 
     if(t >= t_max) return;
 
-    // ab
-    if(a % 2 == 0 && a / 2 < b + a / 2) play(a / 2    , b + a / 2, c        , t + 1);
-    if(b % 2 == 0 && b / 2 < a + b / 2) play(a + b / 2, b / 2    , c        , t + 1);
-    // bc
-    if(b % 2 == 0 && b / 2 < c + b / 2) play(a        , b / 2    , c + b / 2, t + 1);
-    if(c % 2 == 0 && c / 2 < b + c / 2) play(a        , b + c / 2, c / 2    , t + 1);
-    // ac
-    if(a % 2 == 0 && a / 2 < c + a / 2) play(a / 2    , b        , c + a / 2, t + 1);
-    if(c % 2 == 0 && c / 2 < a + c / 2) play(a + c / 2, b        , c / 2    , t + 1);
+    if(a % 2 == 0) {
+        auto a_ = a / 2, b_ = b + a_, c_ = c + a_;
+        if(a_ < b_) play(a_, b_, c, t + 1);
+        if(a_ < c_) play(a_, c_, b, t + 1);
+    }
+    if(b % 2 == 0) {
+        auto b_ = b / 2, a_ = a + b_, c_ = c + b_;
+        if(b_ < a_) play(b_, a_, c, t + 1);
+        if(b_ < c_) play(b_, c_, a, t + 1);
+    }
+    if(c % 2 == 0) {
+        auto c_ = c / 2, a_ = a + c_, b_ = b + c_;
+        if(c_ < a_) play(c_, a_, b, t + 1);
+        if(c_ < b_) play(c_, b_, a, t + 1);
+    }
 }
 
 int main() {
-    for(int s = 1 + 2 + 3; s <= 253 + 254 + 255; s++) {
-        memset(ts, 0, 1024 * 1024);
-        for(int i = 1; i < s; i++) {
-            int j = i;
+    for(int s = 3; s <= s_max; s++) {
+        memset(ts, 0xFF, sizeof(ts));
+        for(int i = 1; i < s; i++) { int j = i;
+            if(i + j >= s) break;
             int k = s - i - j;
-            if(k < 0) break;
-            play(i, j, k);
+            play(i, j, k, 1);
         }
         for(int i = 1; i <= 255; i++) for(int j = 1; j <= 255; j++) {
+            if(i + j >= s) break;
             int k = s - i - j;
-            if(!(0 < k && k <= 255)) continue;
-            int t = ts[i][j];
-            if(t < 11) continue;
-            printf("%d = %d + %d + %d => %d\n", s, i, j, k, t);
+            if(!(k <= 255)) continue;
+            auto t = ts[i][j];
+            if(11 <= t && t < 0xFF) printf("%d = %d + %d + %d => %d\n", s, i, j, k, t);
         }
     }
 
