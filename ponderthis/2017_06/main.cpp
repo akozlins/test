@@ -55,10 +55,6 @@ void print(const r_t& r) {
     else printf("%d/%d", r_.n, r_.d);
 }
 
-void print(float r) {
-    printf("%.1f", r);
-}
-
 int solve(r_t* d, int n) {
     if(n == 1) {
         if(d[0] == 100 || d[0] == -100) return 1;
@@ -116,9 +112,9 @@ int solve(int n) {
 
     int k = 0;
     auto d_ = d + N;
+    memcpy(d_, d, N * sizeof(d[0]));
     for(int i = 0; i < N; i++) for(int j = 1; j < 10; j++) {
         d_[i].n = (d[i].n + j) % 10;
-        d_[i].d = 1;
         printf("  => "); for(int i = 0; i < N; i++) printf("%d", d_[i].n);
         if(solve(d_, N)) printf(" => 100");
         else k += 1;
@@ -131,11 +127,9 @@ int solve(int n) {
     return 0;
 }
 
-int main(int argc, const char** argv) {
-    int n = 689689;
-    if(argc == 2) n = atoi(argv[1]);
-    solve(n);
-//    return 0;
+int main() {
+    solve(397799);
+//    solve(765533);
 
     const int p_max = pow(10, N);
     int primes[1024 * 1024] = { 1, 2, 3 };
@@ -151,11 +145,12 @@ int main(int argc, const char** argv) {
         if(ok) {
 //            printf("primes[%d] = %d\n", n_p, p);
             primes[n_p++] = p;
+            if(n_p >= sizeof(primes) / sizeof(primes[0])) exit(1);
         }
     }
     printf("n_p = %d\n", n_p);
 
-    for(int i = n_p - 1; i >= 0; i--) {
+    for(int i = 0; i < n_p; i++) {
         solve(primes[i]);
     }
 
