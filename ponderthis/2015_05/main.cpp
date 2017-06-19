@@ -19,32 +19,33 @@
  * All numbers must be positive integers.
  */
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <algorithm>
-
 const int s_max = 253 + 254 + 255;
 
-const uint8_t t_max = 16;
-
-void sort(unsigned& a, unsigned& b, unsigned& c) {
-    if(a > b) std::swap(a, b);
-    if(b > c) std::swap(b, c);
-    if(a > b) std::swap(a, b);
-}
+const uint8_t t_max = 12;
 
 uint8_t ts[s_max][s_max];
 
 void play(unsigned a, unsigned b, unsigned c, uint8_t t) {
-    if(t > 1 && (a == b || a == c || b == c)) return;
+    assert(t > 0);
+    if(t > 1) {
+        assert(a < b);
+        if(a == c || b == c) return;
 
-    sort(a, b, c);
-    if(ts[a][b] <= t) return;
-    ts[a][b] = t;
+        if(c < a) { auto tmp = c; c = b; b = a; a = tmp; }
+        else if(c < b) { auto tmp = c; c = b; b = tmp; }
+        assert(a < b && b < c);
 
-    if(t >= t_max) return;
+        if(ts[a][b] <= t) return;
+        ts[a][b] = t;
+
+        if(t >= t_max) return;
+    }
+    else assert(a == b);
 
     if(a % 2 == 0) {
         auto a_ = a / 2, b_ = b + a_, c_ = c + a_;
@@ -76,7 +77,7 @@ int main() {
             int k = s - i - j;
             if(!(k <= 255)) continue;
             auto t = ts[i][j];
-            if(11 <= t && t < 0xFF) printf("%d = %d + %d + %d => %d\n", s, i, j, k, t);
+            if(t_max <= t && t < 0xFF) printf("%d = %d + %d + %d => %d\n", s, i, j, k, t);
         }
     }
 
