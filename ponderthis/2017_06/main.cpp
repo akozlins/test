@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-const int DEBUG = 1;
+const int DEBUG = 0;
 
 // rational number
 struct r_t {
@@ -94,6 +94,7 @@ int solve(r_t* d, int n) {
 }
 
 const int N = 7;
+const int n_max = pow(10, N);
 
 r_t d[256];
 
@@ -116,13 +117,11 @@ int solve(int n) {
     for(int i = 0; i < N; i++) for(int j = 1; j < 10; j++) {
         d_[i].n = (d[i].n + j) % 10;
         printf("  => "); for(int i = 0; i < N; i++) printf("%d", d_[i].n);
-        if(solve(d_, N)) printf(" => 100");
-        else k += 1;
+        if(solve(d_, N)) { k += 1; printf(" => 100"); }
         printf("\n");
-        if(k > 1) return 0;
         d_[i].n = d[i].n;
     }
-    if(k == 1) exit(0);
+    if(k == 62) exit(0);
 
     return 0;
 }
@@ -131,11 +130,10 @@ int main() {
     solve(397799);
 //    solve(765533);
 
-    const int p_max = pow(10, N);
     int primes[1024 * 1024] = { 1, 2, 3 };
     int n_p = 3;
 
-    for(int p = 5; p < p_max; p += 2) {
+    for(int p = 5; p < n_max; p += 2) {
         int ok = 1;
         for(int i = 2, r_max = sqrtf(p); i < n_p; i++) {
             int r = primes[i];
