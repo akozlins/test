@@ -13,6 +13,7 @@ void print_idle(unsigned long idle) {
 }
 
 struct i_idle_t {
+    int nfd;
     std::list<int> fds;
 
     i_idle_t();

@@ -16,6 +16,7 @@
 
 #include <linux/input.h>
 
+#include <sys/inotify.h>
 #include <sys/stat.h>
 
 
@@ -39,6 +40,27 @@ i_idle_t::i_idle_t() : last(ULONG_MAX) {
     }
     if(cfd[0] == -1 || cfd[1] == -1) return;
     fds.push_back(cfd[0]);
+
+    do {
+        nfd = inotify_init();
+        if(nfd == -1) {
+            printf("error: failed to init inotify");
+            break;
+        }
+
+        // IN_ALL_EVENTS
+        int wd = inotify_add_watch(nfd, dev_input.c_str(), IN_ACCESS | IN_MODIFY | IN_CREATE | IN_DELETE);
+        if(wd == -1) {
+            printf("error: inotify_add_watch failed\n");
+            ::close(nfd);
+            nfd = -1;
+        }
+        if(-1 == inotify_add_watch(nfd, UTMP_FILE, IN_MODIFY)) {
+            printf("error: inotify_add_watch('%s') failed\n", UTMP_FILE);
+        }
+    } while(0);
+    if(nfd == -1) return;
+    fds.push_back(nfd);
 
     DIR* dir = opendir(dev_input.c_str());
     if(dir) while(struct dirent* dent = readdir(dir)) {
@@ -124,7 +146,20 @@ void i_idle_t::run() {
 
             last = clock_gettime();
 
-            {
+            if(fd == nfd) {
+                struct inotify_event* event = (struct inotify_event*)buffer;
+
+#ifdef DEBUG
+                if(event->len > 0) printf("'%s'", event->name);
+                printf(" -> ");
+                if(event->mask & IN_ACCESS) printf("IN_ACCESS");
+                if(event->mask & IN_MODIFY) printf("IN_MODIFY");
+                if(event->mask & IN_CREATE) printf("IN_CREATE");
+                if(event->mask & IN_DELETE) printf("IN_DELETE");
+                printf("\n");
+#endif
+            }
+            else {
                 struct input_event* event = (struct input_event*)buffer;
 
 #ifdef DEBUG
@@ -170,7 +205,7 @@ void i_idle_t::close() {
     if(thr.joinable()) thr.join();
     for(int fd : fds) ::close(fd);
     fds.clear();
-    cfd[0] = cfd[1] = -1;
+    cfd[0] = cfd[1] = nfd = -1;
 }
 
 
