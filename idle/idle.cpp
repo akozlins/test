@@ -129,7 +129,7 @@ void i_idle_t::close() {
 
 
 
-w_idle_t::w_idle_t() {
+w_idle_t::w_idle_t() : last(0) {
 }
 
 w_idle_t::~w_idle_t() {
@@ -167,7 +167,8 @@ unsigned long w_idle_t::idle() {
     }
     endutent();
 
-    if(t == 0) return ULONG_MAX;
+    if(1000 * t > last) last = 1000 * t;
 
-    return clock_gettime() - 1000 * t;
+    if(last == 0) return 0;
+    return clock_gettime() - last;
 }

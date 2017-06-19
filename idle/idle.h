@@ -34,6 +34,7 @@ struct w_idle_t {
     w_idle_t();
     ~w_idle_t();
 
+    volatile uint64_t last;
     unsigned long idle();
 
     void close();
