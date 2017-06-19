@@ -12,15 +12,6 @@ void print_idle(unsigned long idle) {
     else printf("%02lu:%02lu:%02lu.%01lu", (idle / 1000 / 60 / 60), (idle / 1000 / 60) % 60, (idle / 1000) % 60, (idle % 1000) / 100);
 }
 
-struct x_idle_t {
-    x_idle_t();
-    ~x_idle_t();
-
-    unsigned long idle();
-
-    void close();
-};
-
 struct i_idle_t {
     std::list<int> fds;
 
