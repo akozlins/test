@@ -4,6 +4,7 @@
 #include <list>
 #include <thread>
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdint.h>
@@ -19,6 +20,10 @@
 
 
 
+static const std::string dev_input = "/dev/input/";
+
+
+
 static uint64_t clock_gettime() {
     timespec t;
     ::clock_gettime(CLOCK_REALTIME, &t);
@@ -27,14 +32,25 @@ static uint64_t clock_gettime() {
 
 
 
-i_idle_t::i_idle_t() : last(0), stop(0) {
-    for(int i = 0;; i++) {
-        char path[256];
-        sprintf(path, "/dev/input/event%d", i);
-        int fd = open(path, O_RDONLY);
-        if(fd == -1) break;
+i_idle_t::i_idle_t() : last(ULONG_MAX) {
+    if(pipe(cfd) != 0) {
+        printf("error: failed to create pipe\n");
+        cfd[0] = cfd[1] = -1;
+    }
+    if(cfd[0] == -1 || cfd[1] == -1) return;
+    fds.push_back(cfd[0]);
 
-        printf("%.256s\n", path);
+    DIR* dir = opendir(dev_input.c_str());
+    if(dir) while(struct dirent* dent = readdir(dir)) {
+        if(strncmp(dent->d_name, "event", 5) != 0) continue;
+
+        std::string path = dev_input + dent->d_name;
+        int fd = open(path.c_str(), O_RDONLY);
+        if(fd == -1) {
+            printf("warn: failed to open '%s'\n", path.c_str());
+            continue;
+        }
+        printf("%s\n", path.c_str());
 
         char name[256];
         if(ioctl(fd, EVIOCGNAME(sizeof(name)), name) > 0) {
@@ -62,6 +78,7 @@ i_idle_t::i_idle_t() : last(0), stop(0) {
         if(ev_key) fds.push_back(fd);
         else ::close(fd);
     }
+    if(dir) closedir(dir);
 
     fds.sort();
 
@@ -73,30 +90,56 @@ i_idle_t::~i_idle_t() {
 }
 
 void i_idle_t::run() {
-    if(fds.empty()) return;
-    int nfds = fds.back();
+    // sizeof(struct inotify_event) + NAME_MAX + 1
+    char buffer[1024];
 
     fd_set fds_;
-    while(!stop) {
+    while(true) {
+        fds.remove(-1);
+        if(fds.empty()) {
+            printf("error: no fds\n");
+            last = ULONG_MAX; return;
+        }
+
         FD_ZERO(&fds_);
         for(int fd : fds) FD_SET(fd, &fds_);
-        if(select(nfds + 1, &fds_, nullptr, nullptr, nullptr) == -1) return;
 
-        for(int fd : fds) if(FD_ISSET(fd, &fds_)) {
-            struct input_event event;
-            if(read(fd, &event, sizeof(event)) != sizeof(event)) return;
+        int nfds = fds.back();
+        if(select(nfds + 1, &fds_, nullptr, nullptr, nullptr) == -1) {
+            printf("error: failed select\n");
+            last = ULONG_MAX; return;
+        }
+
+        for(int& fd : fds) if(FD_ISSET(fd, &fds_)) {
+            if(fd == cfd[0]) {
+                last = ULONG_MAX; return;
+            }
+
+            int n = read(fd, buffer, sizeof(buffer));
+            if(n == 0 || n == -1) {
+                printf("warn: remove fd '%d'\n", fd);
+                ::close(fd); fd = -1;
+                last = ULONG_MAX; continue;
+            }
+
             last = clock_gettime();
 
-/*            printf("%ld.%06ld: "
-                   "type=%02x "
-                   "code=%02x "
-                   "value=%02x\n",
-                   event.time.tv_sec,
-                   event.time.tv_usec,
-                   event.type,
-                   event.code,
-                   event.value
-            );*/
+            {
+                struct input_event* event = (struct input_event*)buffer;
+
+#ifdef DEBUG
+                printf("%ld.%06ld: "
+                       "type=%02x "
+                       "code=%02x "
+                       "value=%02x\n",
+                       event->time.tv_sec,
+                       event->time.tv_usec,
+                       event->type,
+                       event->code,
+                       event->value
+                );
+#endif
+            }
         }
     }
 }
@@ -116,15 +159,18 @@ void i_idle_t::run() {
 }*/
 
 unsigned long i_idle_t::idle() {
-    if(last == 0 || !thr.joinable()) return ULONG_MAX;
+    if(last == ULONG_MAX || !thr.joinable()) return 0;
+    if(last == 0) return ULONG_MAX;
     return clock_gettime() - last;
 }
 
 void i_idle_t::close() {
-    stop = 1;
-    for(int fd : fds) ::close(fd);
+    if(cfd[0] == -1 || cfd[1] == -1) return;
+    ::close(cfd[1]);
     if(thr.joinable()) thr.join();
+    for(int fd : fds) ::close(fd);
     fds.clear();
+    cfd[0] = cfd[1] = -1;
 }
 
 

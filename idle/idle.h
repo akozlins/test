@@ -15,18 +15,16 @@ void print_idle(unsigned long idle) {
 struct i_idle_t {
     std::list<int> fds;
 
-    uint64_t last;
-
-    std::thread thr;
-    volatile int stop;
-
     i_idle_t();
     ~i_idle_t();
 
+    std::thread thr;
     void run();
 
+    volatile uint64_t last;
     unsigned long idle();
 
+    int cfd[2];
     void close();
 };
 
