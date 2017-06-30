@@ -3,13 +3,12 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 struct rand_t {
-    union u_t{
-        int32_t i;
+    union u_t {
+        int i;
         float f;
     };
 
@@ -23,7 +22,7 @@ struct rand_t {
     }
 
     int next(int n) {
-        assert(0 < n && n <= 32);
+        assert(0 < n && n <= 31);
 
         int r = 0;
         while(true) {
@@ -78,8 +77,8 @@ struct rand_t {
         u_t u;
         u.f = a;
         int e = u.i >> 23;
-        int m = u.i & 0x7FFFFF;
         if(e == 0) abort();
+        int m = u.i & 0x7FFFFF;
         if(m == 0) return uniform_exp(0, e - 1);
 
         while(true) {
@@ -95,7 +94,7 @@ struct rand_t {
     }
 
     float uniform(float a, float b) {
-        if(a > b) return uniform(b, a);
+        if(b < a) return uniform(b, a);
         if(a < 0 && b < -a) return -uniform(-b, -a);
 
         u_t ua, ub;
@@ -107,6 +106,8 @@ struct rand_t {
             do { r = uniform_exp(0, eb); if(next(1)) return r; } while(-r < a);
             return -r;
         }
+
+        // TODO: ea == eb
 
         // a > 0 && b > 0
         float r;
