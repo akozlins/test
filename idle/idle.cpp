@@ -33,12 +33,12 @@ static uint64_t clock_gettime() {
 
 
 
-i_idle_t::i_idle_t() : last(ULONG_MAX) {
+i_idle_t::i_idle_t() : last(0) {
     if(pipe(cfd) != 0) {
         printf("error: failed to create pipe\n");
         cfd[0] = cfd[1] = -1;
     }
-    if(cfd[0] == -1 || cfd[1] == -1) return;
+    if(cfd[0] == -1 || cfd[1] == -1) { last = ULONG_MAX; return; }
     fds.push_back(cfd[0]);
 
     do {
@@ -55,11 +55,12 @@ i_idle_t::i_idle_t() : last(ULONG_MAX) {
             ::close(nfd);
             nfd = -1;
         }
-        if(-1 == inotify_add_watch(nfd, UTMP_FILE, IN_MODIFY)) {
+        wd = inotify_add_watch(nfd, UTMP_FILE, IN_MODIFY);
+        if(wd == -1) {
             printf("error: inotify_add_watch('%s') failed\n", UTMP_FILE);
         }
     } while(0);
-    if(nfd == -1) return;
+    if(nfd == -1) { last = ULONG_MAX; return; }
     fds.push_back(nfd);
 
     DIR* dir = opendir(dev_input.c_str());
@@ -72,6 +73,15 @@ i_idle_t::i_idle_t() : last(ULONG_MAX) {
             printf("warn: failed to open '%s'\n", path.c_str());
             continue;
         }
+
+        unsigned long evbit = 0;
+        ioctl(fd, EVIOCGBIT(0, sizeof(evbit)), &evbit);
+        int ev_key = evbit & (1 << EV_KEY);
+        if(!ev_key) {
+            ::close(fd);
+            continue;
+        }
+
         printf("%s\n", path.c_str());
 
         char name[256];
@@ -85,20 +95,15 @@ i_idle_t::i_idle_t() : last(ULONG_MAX) {
         ioctl(fd, EVIOCGID, &id);
         printf("  id: Bus=%04x Vendor=%04x Product=%04x Version=%04x\n", id.bustype, id.vendor, id.product, id.version);
 
-        unsigned long evbit = 0;
-        ioctl(fd, EVIOCGBIT(0, sizeof(evbit)), &evbit);
-        int ev_key = evbit & (1 << EV_KEY);
-
         unsigned char keybit[KEY_MAX / 8 + 1];
         ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), &keybit);
 
         printf("  ");
-        if(ev_key) printf("EV_KEY");
+        printf("EV_KEY");
         if(keybit['a'/8] & (1 << ('a' % 8))) printf(" + 'a'");
         printf("\n");
 
-        if(ev_key) fds.push_back(fd);
-        else ::close(fd);
+        fds.push_back(fd);
     }
     if(dir) closedir(dir);
 
@@ -144,20 +149,20 @@ void i_idle_t::run() {
                 last = ULONG_MAX; continue;
             }
 
-            last = clock_gettime();
-
             if(fd == nfd) {
                 struct inotify_event* event = (struct inotify_event*)buffer;
 
 #ifdef DEBUG
-                if(event->len > 0) printf("'%s'", event->name);
-                printf(" -> ");
+                if(event->len > 0) printf(" '%s'", event->name);
+                printf(" (%d) -> ", event->wd);
                 if(event->mask & IN_ACCESS) printf("IN_ACCESS");
                 if(event->mask & IN_MODIFY) printf("IN_MODIFY");
                 if(event->mask & IN_CREATE) printf("IN_CREATE");
                 if(event->mask & IN_DELETE) printf("IN_DELETE");
                 printf("\n");
 #endif
+
+                if(event->len == 0 && (event->mask & IN_ACCESS)) continue;
             }
             else {
                 struct input_event* event = (struct input_event*)buffer;
@@ -175,6 +180,8 @@ void i_idle_t::run() {
                 );
 #endif
             }
+
+            last = clock_gettime();
         }
     }
 }
@@ -245,6 +252,12 @@ unsigned long w_idle_t::idle() {
         if (stat(tty, &sbuf) != 0) continue;
 //        printf("%s : %s => %lu\n", uname, tty, time(NULL) - t);
         if(sbuf.st_atime > t) t = sbuf.st_atime;
+
+#ifdef DEBUG
+        if(clock_gettime() - 1000 * sbuf.st_atime < 1000) {
+            printf(" %s\n", tty);
+        }
+#endif
     }
     endutent();
 

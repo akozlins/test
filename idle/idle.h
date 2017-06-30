@@ -8,7 +8,7 @@
 
 inline
 void print_idle(unsigned long idle) {
-    if(idle >= 99 * 60 * 60 * 1000) printf("--:--:--.-");
+    if(idle / 1000 / 60 / 60 > 99) printf("--:--:--.-");
     else printf("%02lu:%02lu:%02lu.%01lu", (idle / 1000 / 60 / 60), (idle / 1000 / 60) % 60, (idle / 1000) % 60, (idle % 1000) / 100);
 }
 
