@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.19)
 project(test_gpix CXX)
 
 file(GLOB_RECURSE SOURCES
-    main.cxx
+    main.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})

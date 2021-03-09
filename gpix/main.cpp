@@ -3,10 +3,10 @@
 
 using cr_t = Cairo::RefPtr<Cairo::Context>;
 
-const int W = 800;
-const int H = 800;
-const int nx = 100;
-const int ny = 100;
+const int W = 1024;
+const int H = 1024;
+const int nx = 512;
+const int ny = 512;
 const double wx = double{W} / nx;
 const double wy = double{H} / ny;
 
@@ -22,7 +22,7 @@ bool area_draw(const cr_t& cr) {
 
     draw();
 
-    for(int y = 0; y < 100; y++) for(int x = 0; x < 100; x++) {
+    for(int y = 0; y < nx; y++) for(int x = 0; x < ny; x++) {
         uint32_t pixel = pixels[x][y];
         if(pixel == 0) continue;
         double r = ((pixel >> 0) & 0xFF) / 256.0;
@@ -34,7 +34,7 @@ bool area_draw(const cr_t& cr) {
     }
 
     cr->set_source_rgb(0, 0, 0);
-    cr->set_line_width(1);
+    cr->set_line_width(0.5);
 
     for(int x = 0; x <= nx; x++) {
         cr->move_to(wx * x, 0);
@@ -49,9 +49,9 @@ bool area_draw(const cr_t& cr) {
     cr->stroke();
 
     return true;
-};
+}
 
-int main() {
+int main(int argc, const char* argv[]) {
     auto gtk = new Gtk::Main();
 
     auto window = new Gtk::Window();
