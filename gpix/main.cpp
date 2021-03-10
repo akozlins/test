@@ -1,4 +1,8 @@
 
+#include "wavefront.h"
+
+wavefront_t wavefront;
+
 #include <gtkmm.h>
 
 using cr_t = Cairo::RefPtr<Cairo::Context>;
@@ -38,9 +42,49 @@ void line(int x0, int y0, int x1, int y1) {
     }
 }
 
+void raster(int x0, int y0, int x1l, int x1r, int y1) {
+    if(x1l > x1r) std::swap(x1l, x1r);
+    int y = y1, sy = y0 < y1 ? +1 : -1;
+    int xl = x1l;
+    int xr = x1r;
+    while(1) {
+        for(int x = xl; x <= xr; x++) pixels[x][y] = color;
+        if(y == y0) break;
+
+        y -= sy;
+        double r = double(y - y0) / (y1 - y0);
+        xl = x0 + (x1l - x0) * r;
+        xr = x0 + (x1r - x0) * r;
+    }
+}
+
+void raster(int x0, int y0, int x1, int y1, int x2, int y2) {
+    if(y0 > y2) { std::swap(x0, x2); std::swap(y0, y2); }
+    // y0 <= y2
+    if(y0 > y1) { std::swap(x0, x1); std::swap(y0, y1); }
+    // y0 <= y1, y2
+    if(y1 > y2) { std::swap(x1, x2); std::swap(y1, y2); }
+    // y0 <= y1 <= y2
+    if(y1 == y2) {
+        raster(x0, y0, x1, x2, y1);
+        return;
+    }
+    // y0 <= y1 < y2
+    int xm = x0 + (x2 - x0) * double(y1 - y0) / (y2 - y0);
+    raster(x0, y0, x1, xm, y1);
+    raster(x2, y2, x1, xm, y1);
+}
+
 
 
 void draw() {
+    for(auto& f : wavefront.f) {
+        auto n = (f.v[1] - f.v[0]).cross(f.v[2] - f.v[0]).norm();
+        int c = n.dot({0,0,1}) * 255;
+        if(c < 0) continue;
+        color = (c << 16) + (c << 8) + (c << 0);
+        raster((1+f.v[0].x)*nx/2, (1+f.v[0].y)*ny/2, (1+f.v[1].x)*nx/2, (1+f.v[1].y)*ny/2, (1+f.v[2].x)*nx/2, (1+f.v[2].y)*ny/2);
+    }
 }
 
 bool area_draw(const cr_t& cr) {
@@ -51,7 +95,7 @@ bool area_draw(const cr_t& cr) {
     draw();
 
     for(int y = 0; y < nx; y++) for(int x = 0; x < ny; x++) {
-        uint32_t pixel = pixels[x][y];
+        uint32_t pixel = pixels[x][ny-y];
         if(pixel == 0) continue;
         double r = ((pixel >> 0) & 0xFF) / 256.0;
         double g = ((pixel >> 8) & 0xFF) / 256.0;
@@ -80,6 +124,8 @@ bool area_draw(const cr_t& cr) {
 }
 
 int main(int argc, const char* argv[]) {
+    wavefront.init(argv[1]);
+
     auto gtk = new Gtk::Main();
 
     auto window = new Gtk::Window();
