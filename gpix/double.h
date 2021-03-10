@@ -1,6 +1,14 @@
 
 #include <cmath>
 
+struct int2_t {
+    int x, y;
+
+    bool operator == (const int2_t& v) const {
+        return x == v.x && y == v.y;
+    }
+};
+
 struct double3_t {
     double x, y, z;
 

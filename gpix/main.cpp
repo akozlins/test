@@ -16,65 +16,76 @@ const double wy = double{H} / ny;
 
 struct color_t {
     double r = 0, g = 0, b = 0, a = 0;
-} color;
+};
+
 color_t pixels[nx][ny];
+int zbuffer[nx][ny];
+
+void draw(const int2_t& p, const color_t& c) {
+    if(!(0 <= p.x && p.x < nx) || !(0 <= p.y && p.y < ny)) {
+        printf("F [] draw: out of bounds\n");
+        exit(1);
+    }
+    pixels[p.x][p.y] = c;
+}
 
 /**
  * <https://en.wikipedia.org/wiki/Bresenham's_line_algorithm>
  */
-void line(int x0, int y0, int x1, int y1) {
-    int dx = std::abs(x1 - x0);
-    int sx = x0 < x1 ? +1 : -1;
-    int dy = -std::abs(y1 - y0);
-    int sy = y0 < y1 ? -1 : -1;
+void line(int2_t p0, const int2_t& p1, const color_t& color) {
+    int dx = std::abs(p1.x - p0.x);
+    int sx = p0.x < p1.x ? +1 : -1;
+    int dy = -std::abs(p1.y - p0.y);
+    int sy = p0.y < p1.y ? +1 : -1;
     int err = dx + dy;
 
     while(1) {
-        pixels[x0][y0] = color;
-        if(x0 == x1 && y0 == y1) break;
+        draw(p0, color);
+        if(p0 == p1) break;
         int e2 = 2 * err;
         if(e2 >= dy) {
             err += dy;
-            x0 += sx;
+            p0.x += sx;
         }
         if(e2 <= dx) {
             err += dx;
-            y0 += sy;
+            p0.y += sy;
         }
     }
 }
 
-void raster(int x0, int y0, int x1l, int x1r, int y1) {
-    if(x1l > x1r) std::swap(x1l, x1r);
-    int y = y1, sy = y0 < y1 ? +1 : -1;
-    int xl = x1l;
-    int xr = x1r;
+void raster2(const int2_t& p0, int2_t p1l, int2_t p1r, const color_t& color) {
+    assert(p1l.y == p1r.y);
+    if(p1l.x > p1r.x) std::swap(p1l, p1r);
+    int y = p1l.y, sy = p0.y < p1l.y ? +1 : -1;
+    int xl = p1l.x;
+    int xr = p1r.x;
     while(1) {
-        for(int x = xl; x <= xr; x++) pixels[x][y] = color;
-        if(y == y0) break;
+        for(int x = xl; x <= xr; x++) draw({x, y}, color);
+        if(y == p0.y) break;
 
         y -= sy;
-        double r = double(y - y0) / (y1 - y0);
-        xl = x0 + (x1l - x0) * r;
-        xr = x0 + (x1r - x0) * r;
+        double r = double(y - p0.y) / (p1l.y - p0.y);
+        xl = p0.x + (p1l.x - p0.x) * r;
+        xr = p0.x + (p1r.x - p0.x) * r;
     }
 }
 
-void raster(int x0, int y0, int x1, int y1, int x2, int y2) {
-    if(y0 > y2) { std::swap(x0, x2); std::swap(y0, y2); }
+void raster(int2_t p0, int2_t p1, int2_t p2, const color_t& color) {
+    if(p0.y > p2.y) std::swap(p0, p2);
     // y0 <= y2
-    if(y0 > y1) { std::swap(x0, x1); std::swap(y0, y1); }
+    if(p0.y > p1.y) std::swap(p0, p1);
     // y0 <= y1, y2
-    if(y1 > y2) { std::swap(x1, x2); std::swap(y1, y2); }
+    if(p1.y > p2.y) std::swap(p1, p2);
     // y0 <= y1 <= y2
-    if(y1 == y2) {
-        raster(x0, y0, x1, x2, y1);
+    if(p1.y == p2.y) {
+        raster2(p0, p1, p2, color);
         return;
     }
     // y0 <= y1 < y2
-    int xm = x0 + (x2 - x0) * double(y1 - y0) / (y2 - y0);
-    raster(x0, y0, x1, xm, y1);
-    raster(x2, y2, x1, xm, y1);
+    int xm = p0.x + (p2.x - p0.x) * double(p1.y - p0.y) / (p2.y - p0.y);
+    raster2(p0, p1, {xm,p1.y}, color);
+    raster2(p2, p1, {xm,p1.y}, color);
 }
 
 
@@ -84,8 +95,14 @@ void draw() {
         auto n = (f.v[1] - f.v[0]).cross(f.v[2] - f.v[0]).norm();
         double c = n.dot({0,0,1});
         if(c < 0) continue;
-        color = { c, c, c, 1 };
-        raster((1+f.v[0].x)*nx/2, (1+f.v[0].y)*ny/2, (1+f.v[1].x)*nx/2, (1+f.v[1].y)*ny/2, (1+f.v[2].x)*nx/2, (1+f.v[2].y)*ny/2);
+        int2_t v[3] = {
+            { (1+f.v[0].x)*nx/2, (1+f.v[0].y)*ny/2, (1+f.v[0].z)*nz/2 },
+            { (1+f.v[1].x)*nx/2, (1+f.v[1].y)*ny/2, (1+f.v[0].z)*nz/2 }
+        };
+        raster(v[0], v[1], v[2], { c, c, c, 1 });
+        line(v[0], v[1], { 0, 0, 0, 1});
+        line(v[1], v[2], { 0, 0, 0, 1});
+        line(v[2], v[0], { 0, 0, 0, 1});
     }
 }
 
