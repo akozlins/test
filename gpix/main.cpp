@@ -14,17 +14,19 @@ const int ny = 512;
 const double wx = double{W} / nx;
 const double wy = double{H} / ny;
 
-uint32_t color = 0;
-uint32_t pixels[nx][ny];
+struct color_t {
+    double r = 0, g = 0, b = 0, a = 0;
+} color;
+color_t pixels[nx][ny];
 
 /**
  * <https://en.wikipedia.org/wiki/Bresenham's_line_algorithm>
  */
 void line(int x0, int y0, int x1, int y1) {
     int dx = std::abs(x1 - x0);
-    int sx = x0 < x1 ? 1 : -1;
+    int sx = x0 < x1 ? +1 : -1;
     int dy = -std::abs(y1 - y0);
-    int sy = y0 < y1 ? 1 : -1;
+    int sy = y0 < y1 ? -1 : -1;
     int err = dx + dy;
 
     while(1) {
@@ -80,9 +82,9 @@ void raster(int x0, int y0, int x1, int y1, int x2, int y2) {
 void draw() {
     for(auto& f : wavefront.f) {
         auto n = (f.v[1] - f.v[0]).cross(f.v[2] - f.v[0]).norm();
-        int c = n.dot({0,0,1}) * 255;
+        double c = n.dot({0,0,1});
         if(c < 0) continue;
-        color = (c << 16) + (c << 8) + (c << 0);
+        color = { c, c, c, 1 };
         raster((1+f.v[0].x)*nx/2, (1+f.v[0].y)*ny/2, (1+f.v[1].x)*nx/2, (1+f.v[1].y)*ny/2, (1+f.v[2].x)*nx/2, (1+f.v[2].y)*ny/2);
     }
 }
@@ -95,12 +97,9 @@ bool area_draw(const cr_t& cr) {
     draw();
 
     for(int y = 0; y < nx; y++) for(int x = 0; x < ny; x++) {
-        uint32_t pixel = pixels[x][ny-y];
-        if(pixel == 0) continue;
-        double r = ((pixel >> 0) & 0xFF) / 256.0;
-        double g = ((pixel >> 8) & 0xFF) / 256.0;
-        double b = ((pixel >> 16) & 0xFF) / 256.0;
-        cr->set_source_rgb(r, g, b);
+        auto& pixel = pixels[x][ny-y];
+        if(pixel.a == 0) continue;
+        cr->set_source_rgba(pixel.r, pixel.g, pixel.b, pixel.a);
         cr->rectangle(wx * x, wy * y, wx, wy);
         cr->fill();
     }
