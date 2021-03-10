@@ -10,7 +10,35 @@ const int ny = 512;
 const double wx = double{W} / nx;
 const double wy = double{H} / ny;
 
+uint32_t color = 0;
 uint32_t pixels[nx][ny];
+
+/**
+ * <https://en.wikipedia.org/wiki/Bresenham's_line_algorithm>
+ */
+void line(int x0, int y0, int x1, int y1) {
+    int dx = std::abs(x1 - x0);
+    int sx = x0 < x1 ? 1 : -1;
+    int dy = -std::abs(y1 - y0);
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy;
+
+    while(1) {
+        pixels[x0][y0] = color;
+        if(x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if(e2 >= dy) {
+            err += dy;
+            x0 += sx;
+        }
+        if(e2 <= dx) {
+            err += dx;
+            y0 += sy;
+        }
+    }
+}
+
+
 
 void draw() {
 }
