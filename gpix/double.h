@@ -9,6 +9,10 @@ struct int2_t {
     }
 };
 
+struct int3_t {
+    int x, y, z;
+};
+
 struct double3_t {
     double x, y, z;
 
