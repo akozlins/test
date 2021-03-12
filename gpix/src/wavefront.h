@@ -1,10 +1,11 @@
+#ifndef __WAVEFRONT_H__
+#define __WAVEFRONT_H__
+
+#include "util.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 
-#include <sstream>
 #include <vector>
-
-#include "double.h"
 
 struct face_t {
     double3_t v[3];
@@ -32,3 +33,5 @@ struct wavefront_t {
         }
     }
 };
+
+#endif // __WAVEFRONT_H__

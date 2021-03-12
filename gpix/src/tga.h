@@ -1,13 +1,11 @@
 #ifndef __TGA_H__
 #define __TGA_H__
 
+#include "util.h"
+
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-
-struct color_t {
-    uint8_t r = 0, g = 0, b = 0, a = 0;
-};
 
 /**
  * <http://paulbourke.net/dataformats/tga/>

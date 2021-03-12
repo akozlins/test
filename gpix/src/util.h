@@ -1,5 +1,12 @@
+#ifndef __UTIL_H__
+#define __UTIL_H__
 
 #include <cmath>
+#include <cstdint>
+
+struct color_t {
+    uint8_t r = 0, g = 0, b = 0, a = 0;
+};
 
 struct int2_t {
     int x, y;
@@ -29,7 +36,21 @@ struct double3_t {
         return { x / r, y / r, z / r };
     }
 
+    double3_t operator + (const double3_t& v) const {
+        return { x - v.x, y - v.y, z - v.z };
+    }
+
     double3_t operator - (const double3_t& v) const {
         return { x - v.x, y - v.y, z - v.z };
     }
+
+    double3_t operator * (double v) const {
+        return { x * v, y * v, z * v };
+    }
+
+    double3_t operator / (double v) const {
+        return { x / v, y / v, z / v };
+    }
 };
+
+#endif // __UTIL_H__
