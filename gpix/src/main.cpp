@@ -5,7 +5,7 @@ wavefront_t wavefront;
 #include "view.h"
 
 #include "canvas.h"
-canvas_t canvas(1024, 1024);
+canvas_t canvas(256, 256);
 
 
 struct canvas_view_t : view_t {
@@ -23,12 +23,9 @@ struct canvas_view_t : view_t {
             for(int i = 0; i < 3; i++) {
                 auto v = f.v[i];
                 v = v / (1 - v.z/2);
-                vi[i] = { 500 * (v.x + 1), 500 * (v.y + 1), 500 * (v.z + 1) };
+                vi[i] = { 128 * (v.x + 1), 128 * (v.y + 1), 128 * (v.z + 1) };
             }
             canvas.raster(vi[0], vi[1], vi[2], { c, c, c, 255 });
-//            line(v[0], v[1], { 0, 0, 0, 1});
-//            line(v[1], v[2], { 0, 0, 0, 1});
-//            line(v[2], v[0], { 0, 0, 0, 1});
         }
 
         for(int y = 0; y < canvas.w; y++) for(int x = 0; x < canvas.h; x++) {
@@ -51,6 +48,21 @@ struct canvas_view_t : view_t {
         for(int y = 0; y <= canvas.h; y++) {
             cr->move_to(0, y);
             cr->line_to(canvas.w, y);
+        }
+        cr->stroke();
+
+        for(auto& f : wavefront.f) {
+            int3_t vi[3];
+            for(int i = 0; i < 3; i++) {
+                vi[i] = { 128 * (f.v[i].x + 1), 128 * (f.v[i].y + 1), 128 * (f.v[i].z + 1) };
+            }
+            cr->move_to(vi[0].x + 0.5, vi[0].y + 0.5);
+            cr->line_to(vi[1].x + 0.5, vi[1].y + 0.5);
+            cr->move_to(vi[1].x + 0.5, vi[1].y + 0.5);
+            cr->line_to(vi[2].x + 0.5, vi[2].y + 0.5);
+            cr->move_to(vi[2].x + 0.5, vi[2].y + 0.5);
+            cr->line_to(vi[0].x + 0.5, vi[0].y + 0.5);
+            cr->close_path();
         }
         cr->stroke();
     }

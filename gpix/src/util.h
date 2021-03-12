@@ -18,6 +18,30 @@ struct int2_t {
 
 struct int3_t {
     int x, y, z;
+
+    bool operator == (const int3_t& v) const {
+        return x == v.x && y == v.y && z == v.z;
+    }
+};
+
+struct double2_t {
+    double x, y;
+
+    double2_t operator + (const double2_t& v) const {
+        return { x + v.x, y + v.y };
+    }
+
+    double2_t operator - (const double2_t& v) const {
+        return { x - v.x, y - v.y };
+    }
+
+    double2_t operator * (double v) const {
+        return { x * v, y * v };
+    }
+
+    double2_t operator / (double v) const {
+        return { x / v, y / v };
+    }
 };
 
 struct double3_t {
@@ -37,7 +61,7 @@ struct double3_t {
     }
 
     double3_t operator + (const double3_t& v) const {
-        return { x - v.x, y - v.y, z - v.z };
+        return { x + v.x, y + v.y, z + v.z };
     }
 
     double3_t operator - (const double3_t& v) const {
