@@ -29,7 +29,7 @@ struct canvas_t {
         }
     }
 
-    void draw(const int3_t& p, const color_t& color) {
+    void draw(const int3& p, const color_t& color) {
         if(!(0 <= p.x && p.x < w) || !(0 <= p.y && p.y < h)) {
             printf("W [] draw: (%d, %d) out of bounds\n", p.x, p.y);
             return;
@@ -44,7 +44,7 @@ struct canvas_t {
     /**
      * <http://members.chello.at/~easyfilter/bresenham.html>
      */
-    void line(int3_t p0, int3_t p1, const color_t& color) {
+    void line(int3 p0, int3 p1, const color_t& color) {
         int dx = std::abs(p1.x - p0.x), sx = p0.x < p1.x ? +1 : -1;
         int dy = std::abs(p1.y - p0.y), sy = p0.y < p1.y ? +1 : -1;
         int dz = std::abs(p1.z - p0.z), sz = p0.z < p1.z ? +1 : -1;
@@ -60,7 +60,7 @@ struct canvas_t {
         }
     }
 
-    void raster2(const int3_t& p0, int3_t p1l, int3_t p1r, const color_t& color) {
+    void raster2(const int3& p0, int3 p1l, int3 p1r, const color_t& color) {
         assert(p1l.y == p1r.y);
         if(p1l.x > p1r.x) std::swap(p1l, p1r);
         int y = p1l.y, sy = p0.y < p1l.y ? +1 : -1;
@@ -82,7 +82,7 @@ struct canvas_t {
         }
     }
 
-    void raster(int3_t p0, int3_t p1, int3_t p2, const color_t& color) {
+    void raster(int3 p0, int3 p1, int3 p2, const color_t& color) {
         if(p0.y > p2.y) std::swap(p0, p2);
         // y0 <= y2
         if(p0.y > p1.y) std::swap(p0, p1);

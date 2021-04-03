@@ -16,14 +16,13 @@ struct canvas_view_t : view_t {
         canvas.clear();
 
         for(auto& f : wavefront.f) {
-            auto n = (f.v[1] - f.v[0]).cross(f.v[2] - f.v[0]).norm();
-            int c = 255 * n.dot({0,0,1});
+            auto n = unit(cross(f.v[1] - f.v[0], f.v[2] - f.v[0]));
+            int c = 255 * dot(n, { 0, 0, 1 });
             if(c < 0) continue;
-            int3_t vi[3];
+            int3 vi[3];
             for(int i = 0; i < 3; i++) {
                 auto v = f.v[i];
-                v = v / (1 - v.z/2);
-                vi[i] = { 128 * (v.x + 1), 128 * (v.y + 1), 128 * (v.z + 1) };
+                vi[i] = make_int3((v + 1) * 128);
             }
             canvas.raster(vi[0], vi[1], vi[2], { c, c, c, 255 });
         }
@@ -52,9 +51,9 @@ struct canvas_view_t : view_t {
         cr->stroke();
 
         for(auto& f : wavefront.f) {
-            int3_t vi[3];
+            int3 vi[3];
             for(int i = 0; i < 3; i++) {
-                vi[i] = { 128 * (f.v[i].x + 1), 128 * (f.v[i].y + 1), 128 * (f.v[i].z + 1) };
+                vi[i] = make_int3((f.v[i] + 1) * 128);
             }
             cr->move_to(vi[0].x + 0.5, vi[0].y + 0.5);
             cr->line_to(vi[1].x + 0.5, vi[1].y + 0.5);

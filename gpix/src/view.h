@@ -12,15 +12,15 @@ struct view_t {
     int h;
 
     uint32_t ev_button = -1;
-    double2_t motion_xy, button_xy;
+    double2 motion_xy, button_xy;
 
-    double2_t translate = { 0, h };
+    double2 translate = {0, h };
     double scale = 4;
 
     struct event_t {
         GdkEventType type = GDK_NOTHING;
         guint32 time = 0;
-        double2_t xy;
+        double2 xy;
         guint button = 0;
     };
 
@@ -29,7 +29,7 @@ struct view_t {
     using cr_t = Cairo::RefPtr<Cairo::Context>;
 
     bool on_motion(GdkEventMotion* ev) {
-        double2_t xy = { ev->x, ev->y };
+        double2 xy = {ev->x, ev->y };
         xy = xy - translate;
 
         if(ev_button == 1) {
@@ -46,7 +46,7 @@ struct view_t {
     }
 
     bool on_button(GdkEventButton* ev) {
-        double2_t xy = { ev->x, ev->y };
+        double2 xy = {ev->x, ev->y };
         xy = xy - translate;
 
         button_xy = xy;
@@ -62,7 +62,7 @@ struct view_t {
     }
 
     bool on_scroll(GdkEventScroll* ev) {
-        double2_t xy = { ev->x, ev->y };
+        double2 xy = {ev->x, ev->y };
         xy = xy - translate;
 
         switch(ev->direction) {

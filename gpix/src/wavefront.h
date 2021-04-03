@@ -8,11 +8,11 @@
 #include <vector>
 
 struct face_t {
-    double3_t v[3];
+    double3 v[3];
 };
 
 struct wavefront_t {
-    std::vector<double3_t> v;
+    std::vector<double3> v;
     std::vector<face_t> f;
 
     void init(const char* filename) {

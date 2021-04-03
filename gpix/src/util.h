@@ -8,73 +8,148 @@ struct color_t {
     uint8_t r = 0, g = 0, b = 0, a = 0;
 };
 
-struct int2_t {
+struct int2 {
     int x, y;
-
-    bool operator == (const int2_t& v) const {
-        return x == v.x && y == v.y;
-    }
 };
 
-struct int3_t {
+struct int3 {
     int x, y, z;
-
-    bool operator == (const int3_t& v) const {
-        return x == v.x && y == v.y && z == v.z;
-    }
 };
 
-struct double2_t {
+struct double2 {
     double x, y;
-
-    double2_t operator + (const double2_t& v) const {
-        return { x + v.x, y + v.y };
-    }
-
-    double2_t operator - (const double2_t& v) const {
-        return { x - v.x, y - v.y };
-    }
-
-    double2_t operator * (double v) const {
-        return { x * v, y * v };
-    }
-
-    double2_t operator / (double v) const {
-        return { x / v, y / v };
-    }
 };
 
-struct double3_t {
+struct double3 {
     double x, y, z;
-
-    double dot(const double3_t& v) const {
-        return x*v.x + y*v.y + z*v.z;
-    }
-
-    double3_t cross(const double3_t& v) const {
-        return { y*v.z-z*v.y, z*v.x-x*v.z, x*v.y-y*v.x };
-    }
-
-    double3_t norm() const {
-        double r = std::sqrt(x*x + y*y + z*z);
-        return { x / r, y / r, z / r };
-    }
-
-    double3_t operator + (const double3_t& v) const {
-        return { x + v.x, y + v.y, z + v.z };
-    }
-
-    double3_t operator - (const double3_t& v) const {
-        return { x - v.x, y - v.y, z - v.z };
-    }
-
-    double3_t operator * (double v) const {
-        return { x * v, y * v, z * v };
-    }
-
-    double3_t operator / (double v) const {
-        return { x / v, y / v, z / v };
-    }
 };
+
+
+
+inline
+int3 make_int3(const double3& a) {
+    return { (int)a.x, (int)a.y, (int)a.z };
+}
+
+inline
+double3 make_double3(const int3& a) {
+    return { (double)a.x, (double)a.y, (double)a.z };
+}
+
+
+
+inline
+bool operator == (const int2& a, const int2& b) {
+    return a.x == b.x && a.y == b.y;
+}
+
+inline
+bool operator == (const int3& a, const int3& b) {
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+
+
+inline
+double2 operator + (const double2& a, const double2& b) {
+    return { a.x + b.x, a.y + b.y };
+}
+
+inline
+double2 operator - (const double2& a, const double2& b) {
+    return { a.x - b.x, a.y - b.y };
+}
+
+inline
+double2 operator + (const double2& a, double b) {
+    return { a.x + b, a.y + b };
+}
+
+inline
+double2 operator - (const double2& a, double b) {
+    return { a.x - b, a.y - b };
+}
+
+inline
+double2 operator * (const double2& a, double b) {
+    return { a.x * b, a.y * b };
+}
+
+inline
+double2 operator / (const double2& a, double b) {
+    return { a.x / b, a.y / b };
+}
+
+inline
+double3 operator + (const double3& a, const double3& b) {
+    return { a.x + b.x, a.y + b.y, a.z + b.z };
+}
+
+inline
+double3 operator - (const double3& a, const double3& b) {
+    return { a.x - b.x, a.y - b.y, a.z - b.z };
+}
+
+inline
+double3 operator + (const double3& a, double b) {
+    return { a.x + b, a.y + b, a.z + b };
+}
+
+inline
+double3 operator - (const double3& a, double b) {
+    return { a.x - b, a.y - b, a.z - b };
+}
+
+inline
+double3 operator * (const double3& a, double b) {
+    return { a.x * b, a.y * b, a.z * b };
+}
+
+inline
+double3 operator / (const double3& a, double b) {
+    return { a.x / b, a.y / b, a.z / b };
+}
+
+
+
+inline
+double dot(const double2& a, const double2& b) {
+    return a.x * b.x + a.y * b.y;
+}
+
+inline
+double dot(const double3& a, const double3& b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+inline
+double3 cross(const double3& a, const double3& b) {
+    return { a.y*b.z-a.z*b.y, a.z*b.x-a.x*b.z, a.x*b.y-a.y*b.x };
+}
+
+inline
+double length(const double2& a) {
+    return std::sqrt(dot(a, a));
+}
+
+inline
+double length(const double3& a) {
+    return std::sqrt(dot(a, a));
+}
+
+inline
+double2 unit(const double2& a) {
+    return a / length(a);
+}
+
+inline
+double3 unit(const double3& a) {
+    return a / length(a);
+}
+
+inline
+double2 lerp(const double2& a, const double2& b, double s) {
+    return a + (b - a) * s;
+}
 
 #endif // __UTIL_H__
